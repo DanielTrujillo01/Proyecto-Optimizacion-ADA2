@@ -80,7 +80,7 @@ def convertir_txt_a_dzn(input_path, output_path):
             out.write(f"m = {m};\n")
             out.write(f"ct = {ct};\n")
             out.write(f"maxMovs = {maxMovs};\n")
-            out.write(f"mediana = {mediana};\n\n")
+            # out.write(f"mediana = {mediana};\n\n")
             
             # Escribir array v
             out.write("v = " + str(v) + ";\n")

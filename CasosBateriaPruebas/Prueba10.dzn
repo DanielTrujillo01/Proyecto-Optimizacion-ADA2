@@ -1,0 +1,9 @@
+% Generado automaticamente desde C:/Users/andres/Desktop/SEPTIMO SEMESTRE/ADAII/proyecto_final/Proyecto-Optimizacion-ADA2/BateriaPruebas_2025_2_P2/Prueba10.txt
+
+n = 25;
+m = 3;
+ct = 35.0;
+maxMovs = 20.0;
+v = [0.657, 0.824, 0.942];
+p = [11, 2, 12];
+s = [| 5, 1, 5 | 0, 2, 0 | 5, 3, 4 |];

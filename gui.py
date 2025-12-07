@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import os
 
+
+
 # ------------------------------------------------------------------
 # INTENTOS DE IMPORTACIÓN DE LÓGICA Y LIBRERÍAS
 # ------------------------------------------------------------------
@@ -64,6 +66,8 @@ class MiniZincApp:
         ttk.Label(frame, text="Usa la lógica de 'convertidor.py' para transformar tus datos.").pack(pady=10)
         
         btn = ttk.Button(frame, text="Seleccionar TXT y Convertir", command=self.procesar_archivo_txt)
+        btn2= ttk.Button(frame, text="Seleccionar directorio", command=self.procesar_directorio_txt)
+        btn2.pack(pady=10,ipadx=10)
         btn.pack(pady=10, ipadx=10)
         
         if not CONVERTIDOR_LOADED: btn.state(['disabled'])
@@ -81,6 +85,25 @@ class MiniZincApp:
             self.entry_dzn_path.insert(0, output_path)
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
+    def procesar_directorio_txt(self):
+        print('clicked')
+        input_path=filedialog.askdirectory(initialdir='.')
+
+        if not input_path: return
+        output_path=filedialog.askdirectory(initialdir='.')
+        if not output_path: return
+        try:
+            for i in range(35):
+                input=f'{input_path}/Prueba{i+1}.txt'
+                output=f'{output_path}/Prueba{i+1}.dzn'
+                convertidor.convertir_txt_a_dzn(input,output)
+            messagebox.showinfo('Exito',f'DZN generado in \n{output_path}')
+            self.entry_dzn_path.delete(0, tk.END)
+            self.entry_dzn_path.insert(0, output_path)
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
+
 
     # =================================================================
     # PESTAÑA 2: MANUAL
@@ -136,12 +159,32 @@ class MiniZincApp:
         self.entry_mzn_path.pack(side='left', fill='x', expand=True, padx=5)
         ttk.Button(f_mzn, text="Buscar", command=lambda: self.buscar_fichero(self.entry_mzn_path, "*.mzn")).pack(side='left')
 
-        # 2. Selector de Datos (.dzn)
-        f_dzn = ttk.Frame(frame); f_dzn.pack(fill='x', pady=5)
-        ttk.Label(f_dzn, text="Datos (.dzn):  ").pack(side='left')
-        self.entry_dzn_path = ttk.Entry(f_dzn)
-        self.entry_dzn_path.pack(side='left', fill='x', expand=True, padx=5)
-        ttk.Button(f_dzn, text="Buscar", command=lambda: self.buscar_fichero(self.entry_dzn_path, "*.dzn")).pack(side='left')
+       # 2. Selector de Datos (.dzn)
+        f_dzn = ttk.Frame(frame)
+        f_dzn.pack(fill='x', pady=5)
+
+        ttk.Label(f_dzn, text="Datos (.dzn):").grid(row=0, column=0, padx=3, pady=3, sticky="w")
+
+        # Row 0 → Select single FILE
+        self.entry_dzn_path = ttk.Entry(f_dzn, width=40)
+        self.entry_dzn_path.grid(row=0, column=1, padx=5, sticky="ew")
+        ttk.Button(f_dzn, text="Archivo",
+                command=lambda: self.buscar_fichero(self.entry_dzn_path, "*.dzn")
+        ).grid(row=0, column=2, padx=5)
+
+        # Row 1 → Select DIRECTORY
+        self.entry_dzn_dir = ttk.Entry(f_dzn, width=40)
+        self.entry_dzn_dir.grid(row=1, column=1, padx=5, pady=3, sticky="ew")
+        ttk.Button(f_dzn, text="Carpeta",
+                command=lambda: self.buscar_directorio(self.entry_dzn_dir)
+        ).grid(row=1, column=2, padx=5, pady=3)
+
+        # Allow column 1 to expand
+        f_dzn.columnconfigure(1, weight=1)
+
+
+
+       
 
         # 3. Selector de Solver
         f_solver = ttk.Frame(frame); f_solver.pack(fill='x', pady=5)
@@ -165,78 +208,97 @@ class MiniZincApp:
         self.txt_output['yscrollcommand'] = scroll_out.set
         scroll_out.pack(side='right', fill='y')
 
-    def buscar_fichero(self, entry_widget, extension):
-        path = filedialog.askopenfilename(filetypes=[("Archivos", extension)])
-        if path:
+    def buscar_fichero(self, entry_widget, file_types, initial_folder="."):
+        file_path = filedialog.askopenfilename(
+            title="Seleccione un archivo",
+            initialdir=initial_folder,
+            filetypes=[("Archivos", file_types)]
+    )
+        if file_path:
             entry_widget.delete(0, tk.END)
-            entry_widget.insert(0, path)
+            entry_widget.insert(0, file_path)
+
+    def buscar_directorio(self, entry_widget, initial_folder="."):
+        directory = filedialog.askdirectory(
+            title="Seleccione un directorio",
+            initialdir=initial_folder
+        )
+        if directory:
+            entry_widget.delete(0, tk.END)
+            entry_widget.insert(0, directory)
 
     def ejecutar_minizinc(self):
-        mzn_file = self.entry_mzn_path.get()
-        dzn_file = self.entry_dzn_path.get()
+        mzn_file = self.entry_mzn_path.get().strip()
+        dzn_file = self.entry_dzn_path.get().strip()
+        dzn_dir  = self.entry_dzn_dir.get().strip()
         solver_name = self.combo_solver.get()
 
+        # ----------------------------
+        # Validación del modelo
+        # ----------------------------
         if not os.path.exists(mzn_file):
-            messagebox.showerror("Error", "El archivo del modelo (.mzn) no existe.")
-            return
-        if not os.path.exists(dzn_file):
-            messagebox.showerror("Error", "El archivo de datos (.dzn) no existe.")
-            return
+            return messagebox.showerror("Error", "Archivo .mzn inválido")
 
         self.txt_output.delete("1.0", tk.END)
-        self.txt_output.insert(tk.END, "Ejecutando... por favor espere.\n")
+        self.txt_output.insert(tk.END, "Ejecutando...\n")
         self.root.update()
 
+        # ----------------------------
+        # Modo 1: Carpeta con muchos DZN
+        # ----------------------------
+        
+            
+
+
+        if dzn_dir and os.path.isdir(dzn_dir):
+            dzn_files = sorted([f for f in os.listdir(dzn_dir) if f.endswith(".dzn")],key=lambda x: int(x.replace("Prueba", "").replace(".dzn", "")))
+            print(dzn_files)
+
+            if not dzn_files:
+                return messagebox.showerror("Error", "La carpeta no contiene archivos .dzn")
+
+            for fname in dzn_files:
+                full_path = os.path.join(dzn_dir, fname)
+                self._resolver_un_dzn(mzn_file, full_path, solver_name)
+
+            self.txt_output.insert(tk.END, "\n✔ Todos los archivos procesados.\n")
+            return
+
+        # ----------------------------
+        # Modo 2: Solo 1 archivo DZN
+        # ----------------------------
+        if dzn_file and os.path.exists(dzn_file):
+            self._resolver_un_dzn(mzn_file, dzn_file, solver_name)
+            return
+
+        # ----------------------------
+        # Ninguna entrada válida
+        # ----------------------------
+        messagebox.showerror("Error", "Debe elegir un archivo .dzn o una carpeta.")
+
+    def _resolver_un_dzn(self, mzn_file, dzn_path, solver_name):
         try:
-            # 1. Crear el modelo
             model = minizinc.Model(mzn_file)
-            model.add_file(dzn_file)
+            model.add_file(dzn_path)
             solver = minizinc.Solver.lookup(solver_name)
             instance = minizinc.Instance(solver, model)
-            
-            # 2. Resolver
-            result = instance.solve()
-            
-            self.txt_output.insert(tk.END, "-"*40 + "\n")
-            self.txt_output.insert(tk.END, f"Estado: {result.status}\n")
-            self.txt_output.insert(tk.END, "-"*40 + "\n")
-            
-            # 3. Procesar Solución
-            if result.solution:
-                solucion_texto = str(result)
-                self.txt_output.insert(tk.END, solucion_texto)
-                
-                # --- NUEVA LÓGICA DE GUARDADO EN CARPETA 'Soluciones' ---
-                
-                # A. Nombre base del archivo
-                nombre_base = os.path.splitext(os.path.basename(dzn_file))[0]
-                nombre_archivo = f"solucion{nombre_base}.txt"
-                
-                # B. Definir y crear carpeta "Soluciones"
-                carpeta_destino = "Soluciones"
-                if not os.path.exists(carpeta_destino):
-                    os.makedirs(carpeta_destino) # Crea la carpeta si no existe
-                
-                # C. Crear ruta completa (carpeta + nombre archivo)
-                ruta_completa = os.path.join(carpeta_destino, nombre_archivo)
-                
-                try:
-                    with open(ruta_completa, "w", encoding="utf-8") as f:
-                        f.write(solucion_texto)
-                    
-                    self.txt_output.insert(tk.END, f"\n\n[INFO] Solución guardada en: {ruta_completa}")
-                    messagebox.showinfo("Guardado", f"Archivo generado correctamente en la carpeta 'Soluciones':\n\n{nombre_archivo}")
-                
-                except Exception as e_file:
-                    self.txt_output.insert(tk.END, f"\n\n[ERROR] No se pudo guardar el archivo: {e_file}")
-                # --------------------------------------------------------
-            else:
-                self.txt_output.insert(tk.END, "No se encontró solución (UNSATISFIABLE o Error).")
 
-        except minizinc.error.MiniZincError as me:
-            self.txt_output.insert(tk.END, f"\nError de MiniZinc:\n{me}")
+            result = instance.solve()
+
+            nombre = os.path.splitext(os.path.basename(dzn_path))[0]
+            carpeta_destino = "SolucionesBateriaPruebas"
+
+            os.makedirs(carpeta_destino, exist_ok=True)
+            ruta_salida = os.path.join(carpeta_destino, f"solucion_{nombre}.txt")
+
+            with open(ruta_salida, "w", encoding="utf-8") as f:
+                f.write(str(result) if result.solution else "UNSAT / No solution")
+
+            self.txt_output.insert(tk.END, f"\n✔ {nombre} → {ruta_salida}")
+
         except Exception as e:
-            self.txt_output.insert(tk.END, f"\nError general:\n{e}")
+            self.txt_output.insert(tk.END, f"\n[ERROR] {dzn_path}: {e}")
+
 
 if __name__ == "__main__":
     root = tk.Tk()
