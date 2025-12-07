@@ -1,0 +1,11 @@
+% Generado automaticamente desde C:/Users/Daniel/OneDrive/Desktop/Universidad/Semestre 6.1/ADA2/Proyecto 2/Polarizacion/Casos de prueba/Caso5.txt
+
+n = 18;
+m = 4;
+ct = 50.0;
+maxMovs = 8.0;
+mediana = 0.44;
+
+v = [0.05, 0.44, 0.71, 0.99];
+p = [2, 7, 6, 3];
+s = [| 0, 0, 2 | 1, 1, 5 | 0, 0, 6 | 0, 1, 2 |];
