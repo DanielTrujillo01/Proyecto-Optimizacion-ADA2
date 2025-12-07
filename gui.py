@@ -246,7 +246,10 @@ class MiniZincApp:
         # ----------------------------
         # Modo 1: Carpeta con muchos DZN
         # ----------------------------
-        
+        target_dir=filedialog.askdirectory(
+            title="Seleccione un directorio de destino",
+            initialdir='.'
+        )
             
 
 
@@ -259,7 +262,7 @@ class MiniZincApp:
 
             for fname in dzn_files:
                 full_path = os.path.join(dzn_dir, fname)
-                self._resolver_un_dzn(mzn_file, full_path, solver_name)
+                self._resolver_un_dzn(mzn_file, full_path, solver_name,target_dir)
 
             self.txt_output.insert(tk.END, "\n✔ Todos los archivos procesados.\n")
             return
@@ -268,7 +271,7 @@ class MiniZincApp:
         # Modo 2: Solo 1 archivo DZN
         # ----------------------------
         if dzn_file and os.path.exists(dzn_file):
-            self._resolver_un_dzn(mzn_file, dzn_file, solver_name)
+            self._resolver_un_dzn(mzn_file, dzn_file, solver_name,target_dir)
             return
 
         # ----------------------------
@@ -276,7 +279,7 @@ class MiniZincApp:
         # ----------------------------
         messagebox.showerror("Error", "Debe elegir un archivo .dzn o una carpeta.")
 
-    def _resolver_un_dzn(self, mzn_file, dzn_path, solver_name):
+    def _resolver_un_dzn(self, mzn_file, dzn_path, solver_name,target_dir):
         try:
             model = minizinc.Model(mzn_file)
             model.add_file(dzn_path)
@@ -286,7 +289,7 @@ class MiniZincApp:
             result = instance.solve()
 
             nombre = os.path.splitext(os.path.basename(dzn_path))[0]
-            carpeta_destino = "SolucionesBateriaPruebas"
+            carpeta_destino = target_dir
 
             os.makedirs(carpeta_destino, exist_ok=True)
             ruta_salida = os.path.join(carpeta_destino, f"solucion_{nombre}.txt")
