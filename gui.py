@@ -189,7 +189,7 @@ class MiniZincApp:
         # 3. Selector de Solver
         f_solver = ttk.Frame(frame); f_solver.pack(fill='x', pady=5)
         ttk.Label(f_solver, text="Solver:").pack(side='left')
-        self.combo_solver = ttk.Combobox(f_solver, values=["gecode", "coin-bc", "chuffed"], state="readonly")
+        self.combo_solver = ttk.Combobox(f_solver, values=["gecode", "coin-bc", "chuffed","gurobi"], state="readonly")
         self.combo_solver.current(0)
         self.combo_solver.pack(side='left', padx=5)
 
